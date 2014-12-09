@@ -95,8 +95,8 @@ filter_data({ok, Rec}, cs) ->
 	CityName = maybe_keyfind(<<"en">>, 1, CityNames, <<>>),
 	GeonameID = maybe_keyfind(<<"geoname_id">>, 1, City, undefined),
 	Traits = maybe_keyfind(<<"traits">>, 1, Rec, undefined),
-	IsSat = maybe_keyfind(<<"is_satellite_provider">>, 1, Rec, Traits),
-	IsAnonProxy = maybe_keyfind(<<"is_anonymous_proxy">>, 1, Rec, Traits),
+	IsSat = maybe_keyfind(<<"is_satellite_provider">>, 1, Traits, false),
+	IsAnonProxy = maybe_keyfind(<<"is_anonymous_proxy">>, 1, Traits, false),
 	Country = if
 				  IsSat -> <<"A2">>;
 				  IsAnonProxy -> <<"A1">>;
