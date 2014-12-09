@@ -85,7 +85,7 @@ get_worker(Name, Address) ->
 
 
 filter_data({ok, Rec}, cs) ->
-	RC = maybe_keyfind(<<"registered_country">>, 1, Rec, undefined),
+	RC = maybe_keyfind(<<"country">>, 1, Rec, undefined),
 	ISO = maybe_keyfind(<<"iso_code">>, 1, RC, <<"XX">>),
 	Loc =  maybe_keyfind(<<"location">>, 1, Rec, undefined),
 	Long = maybe_keyfind(<<"longitude">>, 1, Loc, undefined),
@@ -94,7 +94,15 @@ filter_data({ok, Rec}, cs) ->
 	CityNames = maybe_keyfind(<<"names">>, 1, City, undefined),
 	CityName = maybe_keyfind(<<"en">>, 1, CityNames, <<>>),
 	GeonameID = maybe_keyfind(<<"geoname_id">>, 1, City, undefined),
-	{ok, #geocity{country = ISO, city = CityName, long = Long, lat = Lat, city_geoid = GeonameID}};
+	Traits = maybe_keyfind(<<"traits">>, 1, Rec, undefined),
+	IsSat = maybe_keyfind(<<"is_satellite_provider">>, 1, Rec, Traits),
+	IsAnonProxy = maybe_keyfind(<<"is_anonymous_proxy">>, 1, Rec, Traits),
+	Country = if
+				  IsSat -> <<"A2">>;
+				  IsAnonProxy -> <<"A1">>;
+				  true -> ISO
+			  end,
+	{ok, #geocity{country = Country, city = CityName, long = Long, lat = Lat, city_geoid = GeonameID}};
 
 filter_data(Result, _) ->
 	Result.
