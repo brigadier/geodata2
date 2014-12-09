@@ -27,11 +27,6 @@ init([]) ->
 	MaxSecondsBetweenRestarts = 1,
 
 	SupFlags = {RestartStrategy, MaxRestarts, MaxSecondsBetweenRestarts},
-%% 	Spec = {geodata2_poolsup, {geodata2_poolsup, start_link, []}, temporary, brutal_kill, supervisor, [geodata2_poolsup]},
-
-%% 	Loader = {geodata2_loader, {geodata2_loader, start_link, [File]},
-%% 		permanent, 2000, worker, [geodata2_loader]},
-
 	{ok, {SupFlags, BasesSpec}}.
 
 %%%===================================================================
