@@ -10,7 +10,7 @@
 * R15 compatible
 
 
-The app accepts IPs in `{B3:8, B2:8, B1:8, B0:8}`, `<<W7:16, W6:16, W5:16, W4:16, W3:16, W2:16, W1:16, W0:16>>` and big-endian dword formats.
+The app accepts IPs in `{B3:8, B2:8, B1:8, B0:8}`, `{W7:16, W6:16, W5:16, W4:16, W3:16, W2:16, W1:16, W0:16}` and big-endian dword formats.
 
 
 #### Example:
