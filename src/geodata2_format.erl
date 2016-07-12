@@ -86,7 +86,7 @@ read_meta(Data, Pos) ->
 v4_tree_start(_Data, #meta{ip_version = ?IPV4}) ->
 	0;
 v4_tree_start(Data, #meta{ip_version = ?IPV6} = Meta) ->
-	Bits = <<0:80, 16#FFFF:16>>,
+	Bits = <<0:96>>,
 	{error, {partial, Pos}} = lookup(Meta, Data, Bits, ?IPV6),
 	Pos.
 
