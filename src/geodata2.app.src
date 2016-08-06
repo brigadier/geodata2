@@ -1,12 +1,12 @@
 {application, geodata2, [
 	{description, "GeoIP2 db access application"},
-	{vsn, "0.8.0"},
-	{id, "git"},
+	{vsn, "0.9.0"},
 	{modules, []},
 	{registered, []},
 	{applications, [
 		kernel,
-		stdlib
+		stdlib,
+		simplepool
 	]},
 	{mod, {geodata2_app, []}},
 	{env, []}
