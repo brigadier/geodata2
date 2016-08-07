@@ -14,7 +14,7 @@
 #### Note:
 * Uses [Simplepool](https://github.com/brigadier/simplepool) pools. You might not like it as
 `simplepool` uses quite unconventional thing - it compiles pool proc names and other data in a RAM beam module.
-
+* v 1.0.0 is incompatible with earlier versions in every possible way.
 
 Build
 -----
@@ -22,12 +22,18 @@ Build
     $ rebar3 compile
 
 
-The app accepts IPs in `{B3:8, B2:8, B1:8, B0:8}`, `{W7:16, W6:16, W5:16, W4:16, W3:16, W2:16, W1:16, W0:16}` and big-endian dword formats.
+* The app accepts IPs in `{B3:8, B2:8, B1:8, B0:8}`, `{W7:16, W6:16, W5:16, W4:16, W3:16, W2:16, W1:16, W0:16}`
+and big-endian dword formats.
+* Schema parameter could be either `undefined` - IP info gets returned as deep proplist; `map` - the proplist
+is converted to map (only topmost one); [{Name, Path, Default}, ...] where Name - name of the key
+in the result map, Path - path to the value as binary or list of binaries, Default - default value
+if there's no this fild for this IP. While it is possible to send schema with each lookup, it is better to specify
+the schema at the time of the creation of a pool. Invalid schema would result in crash. See examples in the tests.
 
 
 #### Example:
 ```erlang
-CityFile = "GeoIP2-City-Test.mmdb".
+CityFile = "/path/to/GeoIP2-City-Test.mmdb".
 ok = geodata2:start_pool(dynpool, [
     {size, 2},
     {sup_flags, {one_for_all, 1, 5}}
@@ -77,7 +83,7 @@ Tests
 
     $ rebar3 ct
 
-Tests use some example mmdb databases taken from MaxMind github repo. The databases are licensed under
+Tests use some demo mmdb databases checked out from MaxMind github repo. The databases are licensed under
 Creative Commons Attribution-ShareAlike 3.0 license and contain just a few IP ranges.
 
 
