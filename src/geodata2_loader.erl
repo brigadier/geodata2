@@ -1,9 +1,15 @@
 -module(geodata2_loader).
 
 -behaviour(gen_server).
-
+-behaviour(gen_simplepool_worker).
+-include_lib("eunit/include/eunit.hrl").
 %% API
--export([start_link/2, reread/1, reread/2]).
+-export([
+	reread/1
+	, reread/2
+	, simplepool_start_link/4
+	, state/1
+]).
 
 %% gen_server callbacks
 -export([init/1,
@@ -15,27 +21,28 @@
 
 -define(SERVER, ?MODULE).
 
--record(state, {meta, file, name}).
+-record(state, {meta, file, workers}).
 -include("geodata2.hrl").
 %%%===================================================================
 %%% API
 %%%===================================================================
 
-start_link(Name, File) ->
-	PName = geodata2_poolsup:loader_name(Name),
-	gen_server:start_link({local, PName}, ?MODULE, {File, Name}, []).
-
+simplepool_start_link(Visibility, Name, Workers, Args) ->
+	{_, File} = lists:keyfind(file, 1, Args),
+	gen_server:start_link({Visibility, Name}, ?MODULE, [Workers, File | Args], []).
 
 reread(Name) ->
-	PName = geodata2_poolsup:loader_name(Name),
-	ok = gen_server:call(PName, {reread}),
-	erlang:garbage_collect(whereis(PName)), %% call this outside of callback
-	ok.
+	Result = gen_server:call(Name, reread),
+	erlang:garbage_collect(whereis(Name)),
+	Result.
+
 reread(Name, File) ->
-	PName = geodata2_poolsup:loader_name(Name),
-	ok = gen_server:call(PName, {reread, File}),
-	erlang:garbage_collect(whereis(PName)), %% call this outside of callback
-	ok.
+	Result = gen_server:call(Name, {reread, File}),
+	erlang:garbage_collect(whereis(Name)), %% call this outside of callback
+	Result.
+
+state(Name) ->
+	gen_server:call(Name, state).
 
 
 %%%===================================================================
@@ -43,18 +50,43 @@ reread(Name, File) ->
 %%%===================================================================
 
 
-init({File, Name}) ->
-	{ok, MetaRec} = load(File, Name),
-	{ok, #state{meta = MetaRec, file = File, name = Name}}.
+init([Workers, File | _]) ->
+	case load(File, Workers) of
+		error ->
+			{ok, #state{meta = undefined, file = File, workers = Workers}};
+		undefined ->
+			{ok, #state{meta = undefined, file = undefined, workers = Workers}};
+		{ok, MetaRec} ->
+			{ok, #state{meta = MetaRec, file = File, workers = Workers}}
+	end.
 
+handle_call(state, _From, #state{file = File, meta = Meta} = State) ->
+	Status = if
+				File == undefined -> {ok, undefined};
+				Meta == undefined -> {error, File};
+				true -> {ok, File}
+			end,
+	{reply, Status, State#state{meta = undefined}};
 
-handle_call({reread}, _From, #state{file = File, name = Name} = State) ->
-	{ok, MetaRec} = load(File, Name),
-	{reply, ok, State#state{meta = MetaRec}};
+handle_call(reread, _From, #state{file = File, workers = Workers} = State) ->
+	case load(File, Workers) of
+		error ->
+			{reply, error, State#state{meta = undefined}};
+		undefined ->
+			{reply, undefined, State#state{meta = undefined}};
+		{ok, MetaRec} ->
+			{reply, ok, State#state{meta = MetaRec}}
+	end;
 
-handle_call({reread, File}, _From, #state{name = Name} = State) ->
-	{ok, MetaRec} = load(File, Name),
-	{reply, ok, State#state{meta = MetaRec, file = File}};
+handle_call({reread, File}, _From, #state{workers = Workers} = State) ->
+	case load(File, Workers) of
+		error ->
+			{reply, error, State#state{meta = undefined, file = File}};
+		undefined ->
+			{reply, undefined, State#state{meta = undefined, file = File}};
+		{ok, MetaRec} ->
+			{reply, ok, State#state{meta = MetaRec, file = File}}
+	end;
 
 handle_call(_Request, _From, State) ->
 	{reply, ok, State}.
@@ -82,20 +114,31 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
-
-load(File, Name) ->
-	{ok, Data} = file:read_file(File),
-	{ok, Meta} = geodata2_format:meta(Data),
-
-	Workers = geodata2_poolsup:worker_names(Name),
+load(undefined, Workers) -> %%if we decide to start the app without file. it's ok.
 	lists:foreach(
 		fun(Worker) ->
-			ok = gen_server:call(Worker, {set, Meta, Data}),
+			ok = gen_server:call(Worker, {set, undefined, undefined}),
 			erlang:garbage_collect(whereis(Worker))
 		end,
 		Workers
 	),
-	{ok, Meta}.
+	undefined;
+
+load(File, Workers) ->
+	try
+		{ok, Data} = file:read_file(File),
+		{ok, Meta} = geodata2_format:meta(Data),
+		lists:foreach(
+			fun(Worker) ->
+				ok = gen_server:call(Worker, {set, Meta, Data}),
+				erlang:garbage_collect(whereis(Worker))
+			end,
+			Workers
+		),
+		{ok, Meta}
+	catch
+		_:_ -> error
+	end.
 
 
 

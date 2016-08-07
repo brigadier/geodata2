@@ -2,80 +2,85 @@
 
 #### Features:
 * Supports all types (hopefully) of bases in .mmdb format, both IPv4 and IPv6 ones;
-* Allows opening multiple files;
+* Multiple pools, each with its' own file and settings;
+* Start/stop pools dynamically or from the application `env`;
 * Access to each opened file by atom;
-* Uses access pool for each of the file, by default 4 workers per file. At the moment this number can be changed in compile time only;
 * Allows reloading files and replacing files in each pool without inerrupting or slowing down requests stream;
 * Safe from binary reference leakage, binary parts are getting copied.
-* R15 compatible
+* Optional Schema for each pool for transforming deep lists into simple map
+
+
+
+#### Note:
+* Uses [Simplepool](https://github.com/brigadier/simplepool) pools. You might not like it as
+`simplepool` uses quite unconventional thing - it compiles pool proc names and other data in a RAM beam module.
+
+
+Build
+-----
+
+    $ rebar3 compile
 
 
 The app accepts IPs in `{B3:8, B2:8, B1:8, B0:8}`, `{W7:16, W6:16, W5:16, W4:16, W3:16, W2:16, W1:16, W0:16}` and big-endian dword formats.
 
 
 #### Example:
-
-Download and unzip GeoLite2-City.mmdb and GeoLite2-Country.mmdb from [MaxMind](http://dev.maxmind.com/geoip/geoip2/geolite2/) site and put the databases in the `priv/` dir.
-
-
-`$make app shell`
-
-
-
-```
-1> geodata2:start().
-ok
-```
-
-```
-2> geodata2:open_base(b, "priv/GeoLite2-City.mmdb").
-{ok,<0.39.0>}
-``` 
-```                                                                                                                                                                                                                                                       
-3> geodata2:lookup(b, {94, 75, 242, 11}).
-{ok,[{<<"registered_country">>,
-      [{<<"names">>,
-        [{<<"zh-CN">>,<<232,141,183,229,133,176>>},
-         {<<"ru">>,
-          <<208,157,208,184,208,180,208,181,209,128,208,187,208,
-            176,208,189,208,...>>},
-         {<<"pt-BR">>,<<"Holanda">>},
-    ...
-       {<<"geoname_id">>,6255148},
-       {<<"code">>,<<"EU">>}]}]}
-```
-       
-Shortcut if you don't want to copy too much data between processes, for GeoIP2 Country and GeoIP2 City only:
-
-```
-4> geodata2:lookup_geocity(b, {91,78,223,188}).
-{ok,{geocity,<<"RU">>,<<"Moscow">>,524901,37.6156,55.7522}}
-```
-
-```
-5> geodata2:reload_base(b).
-ok
-```
-```
-6> geodata2:reload_base(b, "priv/GeoLite2-Country.mmdb").
-ok
-```
-```
-7> geodata2:lookup_geocity(b, {91,78,223,188}).
-{ok,{geocity,<<"RU">>,<<>>,undefined,undefined,undefined}}
+```erlang
+CityFile = "GeoIP2-City-Test.mmdb".
+ok = geodata2:start_pool(dynpool, [
+    {size, 2},
+    {sup_flags, {one_for_all, 1, 5}}
+], CityFile, [
+    ?GPATH(iso_code, [<<"country">>, <<"iso_code">>], <<>>),
+    ?GPATH(city, [<<"city">>, <<"names">>, <<"en">>], <<>>),
+    ?GPATH(anonproxy, [<<"traits">>, <<"is_anonymous_proxy">>], false),
+    ?GPATH(postal, [<<"postal">>, <<"code">>], <<>>),
+    ?GPATH(country, [<<"country">>, <<"names">>, <<"en">>], <<>>)
+]).
+{ok, CityFile} = geodata2:state(dynpool).
+#{city := <<"Boxford">>,
+    iso_code := <<"GB">>,
+    anonproxy := false,
+    postal := <<"OX1">>,
+    country := <<"United Kingdom">>
+} = geodata2:lookup(dynpool, {2, 125, 160, 216}).
+#{iso_code := <<"GB">>,
+    no_exists := noexists
+} = geodata2:lookup(dynpool, {2, 125, 160, 216}, [
+    ?GPATH(iso_code, [<<"country">>, <<"iso_code">>], <<>>),
+    ?GPATH(no_exists, [<<"no">>, <<"exists">>, <<"at all">>], noexists)
+]).
+ok = geodata2:reload_base(dynpool, undefined).
+not_loaded = geodata2:lookup(dynpool, {2, 125, 160, 216}),
+ok = geodata2:reload_base(dynpool, CityFile).
+#{iso_code := <<"GB">>,
+    no_exists := noexists
+} = geodata2:lookup(dynpool, {2, 125, 160, 216}, [
+    ?GPATH(iso_code, [<<"country">>, <<"iso_code">>], <<>>),
+    ?GPATH(no_exists, [<<"no">>, <<"exists">>, <<"at all">>], noexists)
+]).
+ok = geodata2:reload_base(dynpool).
+#{iso_code := <<"GB">>,
+    no_exists := noexists
+} = geodata2:lookup(dynpool, {2, 125, 160, 216}, [
+    ?GPATH(iso_code, [<<"country">>, <<"iso_code">>], <<>>),
+    ?GPATH(no_exists, [<<"no">>, <<"exists">>, <<"at all">>], noexists)
+]).
 ```
 
-```
-8> geodata2:lookup(b, {127, 0, 0, 1}).
-not_found
-```
+See more examples in tests
 
-```
-9> geodata2:lookup(b, {127, 0, 0, 1, 1}).
-{error,format}
-```
+
+Tests
+-----
+
+    $ rebar3 ct
+
+Tests use some example mmdb databases taken from MaxMind github repo. The databases are licensed under
+Creative Commons Attribution-ShareAlike 3.0 license and contain just a few IP ranges.
 
 
 *A MaxMind repo with a number of test bases: [MaxMind-DB](https://github.com/maxmind/MaxMind-DB/)*
 
-*This application uses some bits and pieces from [egeoip](http://github.com/mochi/egeoip)*
+

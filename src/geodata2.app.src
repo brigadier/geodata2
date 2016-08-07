@@ -1,6 +1,6 @@
 {application, geodata2, [
 	{description, "GeoIP2 db access application"},
-	{vsn, "0.9.0"},
+	{vsn, "1.0.0"},
 	{modules, []},
 	{registered, []},
 	{applications, [
