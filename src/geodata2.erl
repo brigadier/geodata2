@@ -19,7 +19,7 @@
 
 -type name_all() :: string() | atom() | deep_list() | (RawFilename :: binary()).
 %%
--spec lookup(atom(), any()) -> {ok, Result::list()} | not_found | {error, Reason :: term()}.
+-spec lookup(atom(), any()) -> {ok, list()|map()} | not_found | {error, Reason :: term()}.
 lookup(Pool, IP) ->
 	geodata2_worker:lookup(maybe_worker(Pool), IP).
 
