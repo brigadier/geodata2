@@ -98,7 +98,7 @@ testgeo(Config) ->
 	]),
 
 
-	{ok, CityFile} = geodata2:state(dynpool),
+	{ok, CityFile, #mmdbmeta{}} = geodata2:state(dynpool),
 	R1 = #{city => <<"Boxford">>,
 		iso_code  => <<"GB">>,
 		anonproxy  => false,

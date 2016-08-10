@@ -64,7 +64,7 @@ handle_call(state, _From, #state{file = File, meta = Meta} = State) ->
 	Status = if
 				File == undefined -> {ok, undefined};
 				Meta == undefined -> {error, File};
-				true -> {ok, File}
+				true -> {ok, File, Meta}
 			end,
 	{reply, Status, State#state{meta = undefined}};
 

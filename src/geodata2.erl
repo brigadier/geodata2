@@ -62,7 +62,7 @@ reload_base(PoolName, File) ->
 	Controller = maybe_controller(PoolName),
 	geodata2_loader:reread(Controller, File).
 
--spec state(atom()|{proc, atom()}) -> {ok, undefined|name_all()} | {error, name_all()}.
+-spec state(atom()|{proc, atom()}) -> {ok, undefined|name_all(), #mmdbmeta{}} | {error, name_all()}.
 state(PoolName) ->
 	Controller = maybe_controller(PoolName),
 	geodata2_loader:state(Controller).

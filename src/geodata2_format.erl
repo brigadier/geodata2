@@ -55,7 +55,7 @@ make_meta(Data, Meta) ->
 	true = DBType =/= undefined,
 
 	TreeSize = ((RecordSize * 2) div 8) * NodeCount,
-	MetaRec = #meta{
+	MetaRec = #mmdbmeta{
 		ip_version = IPVersion, %%v4 or v6
 		record_size = RecordSize, %%bits
 		node_count = NodeCount, %%number
@@ -70,7 +70,7 @@ make_meta(Data, Meta) ->
 		data_start = TreeSize + 16 %%bytes
 	},
 	V4Start = v4_tree_start(Data, MetaRec), %%optimization for ipv4 lookups in ipv6 database - begin search for IPV4s from the position of ::ffff:0:0/96 in the tree, saves 96 movements on each lookup
-	{ok, MetaRec#meta{v4_start = V4Start}}.
+	{ok, MetaRec#mmdbmeta{v4_start = V4Start}}.
 
 
 read_meta(_Data, Pos) when Pos =< 0 ->
@@ -83,35 +83,35 @@ read_meta(Data, Pos) ->
 	end.
 
 %%optimization for ipv4 lookups in ipv6 database - begin search for IPV4s from the position of ::ffff:0:0/96 in the tree, saves 96 movements on each lookup
-v4_tree_start(_Data, #meta{ip_version = ?IPV4}) ->
+v4_tree_start(_Data, #mmdbmeta{ip_version = ?IPV4}) ->
 	0;
-v4_tree_start(Data, #meta{ip_version = ?IPV6} = Meta) ->
+v4_tree_start(Data, #mmdbmeta{ip_version = ?IPV6} = Meta) ->
 	Bits = <<0:96>>,
 	{error, {partial, Pos}} = lookup(Meta, Data, Bits, ?IPV6),
 	Pos.
 
-lookup(#meta{ip_version = V} = Meta, Data, Bits, V) -> %%same version of IPs
+lookup(#mmdbmeta{ip_version = V} = Meta, Data, Bits, V) -> %%same version of IPs
 	lookup_pos(Meta, Data, Bits, 0);
-lookup(#meta{ip_version = ?IPV6, v4_start = V4Start} = Meta, Data, Bits, ?IPV4) -> %%lookup v4 in v6 db
+lookup(#mmdbmeta{ip_version = ?IPV6, v4_start = V4Start} = Meta, Data, Bits, ?IPV4) -> %%lookup v4 in v6 db
 	lookup_pos(Meta, Data, Bits, V4Start);
 lookup(_, _, _, _) -> %%lookup v6 in v4 db
 	{error, v4db}.
 
-lookup_pos(#meta{node_count = NodeCount}, _, <<>>, Pos) when Pos < NodeCount -> %% can't happen in the real db, gets used for lookup of v4 tree start
+lookup_pos(#mmdbmeta{node_count = NodeCount}, _, <<>>, Pos) when Pos < NodeCount -> %% can't happen in the real db, gets used for lookup of v4 tree start
 	{error, {partial, Pos}};
 
 
-lookup_pos(#meta{node_count = NodeCount,
+lookup_pos(#mmdbmeta{node_count = NodeCount,
 				 record_size = RecordSize,
 				 remdr = Remdr,
 				 whole = Whole} = Meta, Data, <<LR:1, Bits/bits>>, Pos) when Pos < NodeCount ->
 	Offset = Pos * RecordSize * 2,
 	lookup_pos(Meta, Data, Bits, lr(LR, Offset, Whole, Remdr, RecordSize, Data));
 
-lookup_pos(#meta{node_count = NodeCount}, _, _Bits, NodeCount) ->
+lookup_pos(#mmdbmeta{node_count = NodeCount}, _, _Bits, NodeCount) ->
 	not_found;
 
-lookup_pos(#meta{node_count = NodeCount, tree_size = TreeSize} = Meta, Data, _, Pointer) when Pointer > NodeCount ->
+lookup_pos(#mmdbmeta{node_count = NodeCount, tree_size = TreeSize} = Meta, Data, _, Pointer) when Pointer > NodeCount ->
 	Offset = Pointer + TreeSize - NodeCount,
 	{ok, parse_ptr({Meta, Data}, Offset)}.
 
@@ -143,16 +143,16 @@ parse(_MD, <<?GEO_DOUBLE:3, 8:5, F:64/float, Rest/binary>>) ->
 	{F, Rest};
 
 
-parse({#meta{data_start = DS}, _} = MD, <<?GEO_POINTER:3, 0:2, P:11/unsigned-integer, Rest/binary>>) ->
+parse({#mmdbmeta{data_start = DS}, _} = MD, <<?GEO_POINTER:3, 0:2, P:11/unsigned-integer, Rest/binary>>) ->
 	{parse_ptr(MD, P + DS), Rest};
 
-parse({#meta{data_start = DS}, _} = MD, <<?GEO_POINTER:3, 1:2, P:19/unsigned-integer, Rest/binary>>) ->
+parse({#mmdbmeta{data_start = DS}, _} = MD, <<?GEO_POINTER:3, 1:2, P:19/unsigned-integer, Rest/binary>>) ->
 	{parse_ptr(MD, P + 2048 + DS), Rest};
 
-parse({#meta{data_start = DS}, _} = MD, <<?GEO_POINTER:3, 2:2, P:27/unsigned-integer, Rest/binary>>) ->
+parse({#mmdbmeta{data_start = DS}, _} = MD, <<?GEO_POINTER:3, 2:2, P:27/unsigned-integer, Rest/binary>>) ->
 	{parse_ptr(MD, P + 526336 + DS), Rest};
 
-parse({#meta{data_start = DS}, _} = MD, <<?GEO_POINTER:3, 3:2, _VVV:3, P:32, Rest/binary>>) ->
+parse({#mmdbmeta{data_start = DS}, _} = MD, <<?GEO_POINTER:3, 3:2, _VVV:3, P:32, Rest/binary>>) ->
 	{parse_ptr(MD, P + DS), Rest};
 
 
