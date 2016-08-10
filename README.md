@@ -45,31 +45,31 @@ ok = geodata2:start_pool(dynpool, [
     ?GPATH(country, [<<"country">>, <<"names">>, <<"en">>], <<>>)
 ]).
 {ok, CityFile} = geodata2:state(dynpool).
-#{city := <<"Boxford">>,
+{ok, #{city := <<"Boxford">>,
     iso_code := <<"GB">>,
     anonproxy := false,
     postal := <<"OX1">>,
     country := <<"United Kingdom">>
-} = geodata2:lookup(dynpool, {2, 125, 160, 216}).
-#{iso_code := <<"GB">>,
+}} = geodata2:lookup(dynpool, {2, 125, 160, 216}).
+{ok, #{iso_code := <<"GB">>,
     no_exists := noexists
-} = geodata2:lookup(dynpool, {2, 125, 160, 216}, [
+}} = geodata2:lookup(dynpool, {2, 125, 160, 216}, [
     ?GPATH(iso_code, [<<"country">>, <<"iso_code">>], <<>>),
     ?GPATH(no_exists, [<<"no">>, <<"exists">>, <<"at all">>], noexists)
 ]).
 ok = geodata2:reload_base(dynpool, undefined).
 not_loaded = geodata2:lookup(dynpool, {2, 125, 160, 216}),
 ok = geodata2:reload_base(dynpool, CityFile).
-#{iso_code := <<"GB">>,
+{ok, #{iso_code := <<"GB">>,
     no_exists := noexists
-} = geodata2:lookup(dynpool, {2, 125, 160, 216}, [
+}} = geodata2:lookup(dynpool, {2, 125, 160, 216}, [
     ?GPATH(iso_code, [<<"country">>, <<"iso_code">>], <<>>),
     ?GPATH(no_exists, [<<"no">>, <<"exists">>, <<"at all">>], noexists)
 ]).
 ok = geodata2:reload_base(dynpool).
-#{iso_code := <<"GB">>,
+{ok, #{iso_code := <<"GB">>,
     no_exists := noexists
-} = geodata2:lookup(dynpool, {2, 125, 160, 216}, [
+}} = geodata2:lookup(dynpool, {2, 125, 160, 216}, [
     ?GPATH(iso_code, [<<"country">>, <<"iso_code">>], <<>>),
     ?GPATH(no_exists, [<<"no">>, <<"exists">>, <<"at all">>], noexists)
 ]).
