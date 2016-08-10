@@ -66,7 +66,7 @@ handle_call(state, _From, #state{file = File, meta = Meta} = State) ->
 				Meta == undefined -> {error, File};
 				true -> {ok, File, Meta}
 			end,
-	{reply, Status, State#state{meta = undefined}};
+	{reply, Status, State};
 
 handle_call(reread, _From, #state{file = File, workers = Workers} = State) ->
 	case load(File, Workers) of
