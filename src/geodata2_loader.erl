@@ -62,7 +62,7 @@ init([Workers, File | _]) ->
 
 handle_call(state, _From, #state{file = File, meta = Meta} = State) ->
 	Status = if
-				File == undefined -> {ok, undefined};
+				File == undefined -> {ok, undefined, undefined};
 				Meta == undefined -> {error, File};
 				true -> {ok, File, Meta}
 			end,
