@@ -116,17 +116,14 @@ testgeo(Config) ->
 	R1 = geodata2:lookup(dynpool, {2, 125, 160, 216}),
 	ok = geodata2:reload_base(dynpool),
 	R1 = geodata2:lookup(dynpool, {2, 125, 160, 216}),
-
 	case catch geodata2:lookup(dynpool, {2, 125, 160, 216}, [{bad, schema}]) of
 		{'EXIT', _} -> timer:sleep(100), ok
 	end,
-
-
 	ok = geodata2:start_pool(dynpool2, [
 		{size, 2},
 		{sup_flags, {one_for_all, 1, 5}}
 	], undefined, undefined),
-	{ok, undefined} = geodata2:state(dynpool2),
+	{ok, undefined, undefined} = geodata2:state(dynpool2),
 
 	ok = geodata2:start_pool(dynpool3, [
 		{size, 2},
