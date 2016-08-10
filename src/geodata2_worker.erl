@@ -118,19 +118,19 @@ lookup_key(Rec, [Key | Path], Default) ->
 
 
 filter_data({ok, Rec}, Schema) when is_list(Schema) ->
-	lists:foldl(
+	{ok, lists:foldl(
 		fun({Name, Path, Default}, Map) ->
 			Map#{Name => lookup_key(Rec, Path, Default)}
 		end,
 		#{},
 		Schema
-	);
+	)};
 
 filter_data({ok, Rec}, map) ->
-	maps:from_list(Rec);
-
-filter_data({ok, Rec}, _) ->
-	Rec;
+	{ok, maps:from_list(Rec)};
+%%
+%%filter_data({ok, Rec}, _) ->
+%%	Rec;
 
 filter_data(Result, _) ->
 	Result.

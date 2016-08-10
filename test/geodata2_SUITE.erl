@@ -52,29 +52,29 @@ loadtest1M(_Config) -> %%1M read ops, 1000 processes, 8 workers
 
 testgeo(Config) ->
 	not_found = geodata2:lookup(isppool, {192, 168, 1, 1}),
-	#{<<"autonomous_system_number">> := 1221,
+	{ok, #{<<"autonomous_system_number">> := 1221,
 		<<"autonomous_system_organization">> := <<"Telstra Pty Ltd">>,
 		<<"isp">> := <<"Telstra Internet">>,
-		<<"organization">> := <<"Telstra Internet">>} = geodata2:lookup(isppool, {1, 128, 1, 10}, map),
+		<<"organization">> := <<"Telstra Internet">>}} = geodata2:lookup(isppool, {1, 128, 1, 10}, map),
 
-	#{asn := 1221} = geodata2:lookup(isppool, {1, 128, 1, 10},
+	{ok, #{asn := 1221}} = geodata2:lookup(isppool, {1, 128, 1, 10},
 		[?GPATH(asn, <<"autonomous_system_number">>, undefined)]),
-	#{asn := 1221} = geodata2:lookup(isppool, {1, 128, 1, 10},
+	{ok, #{asn := 1221}} = geodata2:lookup(isppool, {1, 128, 1, 10},
 		[?GPATH(asn, [<<"autonomous_system_number">>], undefined)]),
-	#{abc := nope} = geodata2:lookup(isppool, {1, 128, 1, 10},
+	{ok, #{abc := nope}} = geodata2:lookup(isppool, {1, 128, 1, 10},
 		[?GPATH(abc, [<<"abc">>], nope)]),
 
-	[{<<"connection_type">> , <<"Dialup">>}] = geodata2:lookup(ctpool, {1, 0, 128, 1}),
-	#{country := <<"Philippines">>,
+	{ok, [{<<"connection_type">> , <<"Dialup">>}]} = geodata2:lookup(ctpool, {1, 0, 128, 1}),
+	{ok, #{country := <<"Philippines">>,
 		iso_code := <<"PH">>,
 		lat := 13.0,
 		long := 122.0,
 		postal := <<"34021">>,
 		represented_country_iso := <<"US">>,
-		time_zone := <<"Asia/Manila">>} = geodata2:lookup(countrypool, {202, 196, 224, 1}),
+		time_zone := <<"Asia/Manila">>}} = geodata2:lookup(countrypool, {202, 196, 224, 1}),
 
 
-	#{anonproxy := true, iso_code := <<"BT">>, sat := false} = geodata2:lookup(countrypool, {67, 43, 156, 0},
+	{ok, #{anonproxy := true, iso_code := <<"BT">>, sat := false}} = geodata2:lookup(countrypool, {67, 43, 156, 0},
 		[
 			?GPATH(iso_code, [<<"country">>, <<"iso_code">>], <<>>),
 			?GPATH(anonproxy, [<<"traits">>, <<"is_anonymous_proxy">>], false),
@@ -105,7 +105,7 @@ testgeo(Config) ->
 		postal  => <<"OX1">>,
 		country  => <<"Великобритания"/utf8>>
 	},
-	R1 = geodata2:lookup(dynpool, {2, 125, 160, 216}),
+	{ok, R1} = geodata2:lookup(dynpool, {2, 125, 160, 216}),
 
 	undefined = geodata2:reload_base(dynpool, undefined),
 	not_loaded = geodata2:lookup(dynpool, {2, 125, 160, 216}),
@@ -113,9 +113,9 @@ testgeo(Config) ->
 	not_loaded = geodata2:lookup(dynpool, {2, 125, 160, 216}),
 
 	ok = geodata2:reload_base(dynpool, CityFile),
-	R1 = geodata2:lookup(dynpool, {2, 125, 160, 216}),
+	{ok, R1} = geodata2:lookup(dynpool, {2, 125, 160, 216}),
 	ok = geodata2:reload_base(dynpool),
-	R1 = geodata2:lookup(dynpool, {2, 125, 160, 216}),
+	{ok, R1} = geodata2:lookup(dynpool, {2, 125, 160, 216}),
 	case catch geodata2:lookup(dynpool, {2, 125, 160, 216}, [{bad, schema}]) of
 		{'EXIT', _} -> timer:sleep(100), ok
 	end,
