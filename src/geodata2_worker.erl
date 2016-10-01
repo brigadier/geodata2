@@ -9,7 +9,6 @@
 %% API
 -export([
 	simplepool_start_link/4
-%%	, lookup/2, lookup_countrycity/2
 	, lookup/2
 	, lookup/3
 ]).
@@ -149,9 +148,6 @@ filter_data({ok, Rec}, Schema) when is_list(Schema) ->
 
 filter_data({ok, Rec}, map) ->
 	{ok, maps:from_list(Rec)};
-%%
-%%filter_data({ok, Rec}, _) ->
-%%	Rec;
 
 filter_data(Result, _) ->
 	Result.
