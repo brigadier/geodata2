@@ -7,8 +7,9 @@
 -compile(export_all).
 
 groups() -> [{main, [], [
-	testgeo
-	, loadtest1M
+	test_deepchema
+	, testgeo
+%%	, loadtest1M
 ]}].
 
 all() -> [{group, main}].
@@ -26,7 +27,10 @@ loadtest1M(_Config) -> %%1M read ops, 1000 processes, 8 workers
 						fun(_) ->
 							IP = {rand:uniform(255), rand:uniform(255), rand:uniform(255), rand:uniform(255)},
 							R = geodata2:lookup(countrypool, IP),
-							true = is_map(R) orelse R == not_found
+							case R of
+								{ok, M} when is_map(M) -> ok;
+								not_found -> ok
+							end
 						end,
 						L
 					)
@@ -74,6 +78,10 @@ testgeo(Config) ->
 		time_zone := <<"Asia/Manila">>}} = geodata2:lookup(countrypool, {202, 196, 224, 1}),
 
 
+
+
+
+
 	{ok, #{anonproxy := true, iso_code := <<"BT">>, sat := false}} = geodata2:lookup(countrypool, {67, 43, 156, 0},
 		[
 			?GPATH(iso_code, [<<"country">>, <<"iso_code">>], <<>>),
@@ -107,6 +115,9 @@ testgeo(Config) ->
 	},
 	{ok, R1} = geodata2:lookup(dynpool, {2, 125, 160, 216}),
 
+
+
+
 	undefined = geodata2:reload_base(dynpool, undefined),
 	not_loaded = geodata2:lookup(dynpool, {2, 125, 160, 216}),
 	error = geodata2:reload_base(dynpool, "no_exists"),
@@ -130,6 +141,85 @@ testgeo(Config) ->
 		{sup_flags, {one_for_all, 1, 5}}
 	], "not exists.dat", map),
 	{error, "not exists.dat"} = geodata2:state(dynpool3),
+
+	ok.
+
+test_deepchema(Config) ->
+	DataDir = ?config(data_dir, Config),
+	CityFile = filename:join(DataDir, "GeoIP2-City-Test.mmdb"),
+
+	ok = geodata2:start_pool(lpool, [
+		{size, 2},
+		{sup_flags, {one_for_all, 1, 5}}
+	], CityFile, [
+		?GPATH(subdivisions, [<<"subdivisions">>], <<>>)
+	]),
+
+	not_found = geodata2:lookup(lpool, {21, 125, 160, 216},
+							   [
+								   ?GPATH(subdivisions, [<<"subdivisions">>], <<>>)
+							   ]
+	),
+
+	{ok, #{subdivisions := SB1}} = geodata2:lookup(
+		lpool, {2, 125, 160, 216},
+		[
+			?GPATH(subdivisions, [<<"subdivisions">>], <<>>)
+		]
+	),
+	true = is_list(SB1),
+
+	{ok, #{subdivisions := SB2}} = geodata2:lookup(
+		lpool, {2, 125, 160, 216},
+		[
+			?GPATH(subdivisions, [<<"subdivisions">>, {list, <<"names">>}], <<>>)
+		]
+	),
+	true = is_list(SB2) andalso length(SB2) == 2,
+
+	{ok, #{subdivisions := [<<"England">>, <<"West Berkshire">>]}} = geodata2:lookup(
+		lpool, {2, 125, 160, 216},
+		[
+			?GPATH(subdivisions, [<<"subdivisions">>, {list, <<"names">>}, <<"en">>], <<>>)
+		]
+	),
+
+	%%deep schema
+	{ok, R1} = geodata2:lookup(
+		lpool, {2, 125, 160, 216},
+		[
+			?GPATH(subdivisions, [<<"subdivisions">>,
+								  	[?GPATH(geoname_id, <<"geoname_id">>, undefined),
+									 ?GPATH(iso_code, <<"iso_code">>, undefined),
+								  	 ?GPATH(name, [<<"names">>, <<"en">>], undefined)]
+								  ], <<>>
+			),
+			?GPATH(city, [<<"city">>, <<"names">>, <<"en">>], <<>>)
+		]
+	),
+
+	#{city := <<"Boxford">>,
+	  subdivisions := [#{geoname_id := 6269131, iso_code := <<"ENG">>, name := <<"England">>},
+					   #{geoname_id := 3333217, iso_code := <<"WBK">>, name := <<"West Berkshire">>}]} = R1,
+
+
+	%%deep schema, <<"tailelem">> is ignored
+	{ok, R2} = geodata2:lookup(
+		lpool, {2, 125, 160, 216},
+		[
+			?GPATH(subdivisions, [<<"subdivisions">>,
+								  	[?GPATH(geoname_id, <<"geoname_id">>, undefined),
+									 ?GPATH(iso_code, <<"iso_code">>, undefined),
+								  	 ?GPATH(name, [<<"names">>, <<"en">>], undefined)],
+								  <<"tailelem">>
+								  ], nuffin
+			),
+			?GPATH(city, [<<"city">>, <<"names">>, <<"en">>], <<>>)
+		]
+	),
+	#{city := <<"Boxford">>,
+	  subdivisions := [#{geoname_id := 6269131, iso_code := <<"ENG">>, name := <<"England">>},
+					   #{geoname_id := 3333217, iso_code := <<"WBK">>, name := <<"West Berkshire">>}]} = R2,
 
 	ok.
 
