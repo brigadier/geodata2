@@ -189,9 +189,9 @@ test_deepchema(Config) ->
 		lpool, {2, 125, 160, 216},
 		[
 			?GPATH(subdivisions, [<<"subdivisions">>,
-								  	[?GPATH(geoname_id, <<"geoname_id">>, undefined),
+								  {list, [?GPATH(geoname_id, <<"geoname_id">>, undefined),
 									 ?GPATH(iso_code, <<"iso_code">>, undefined),
-								  	 ?GPATH(name, [<<"names">>, <<"en">>], undefined)]
+								  	 ?GPATH(name, [<<"names">>, <<"en">>], undefined)]}
 								  ], <<>>
 			),
 			?GPATH(city, [<<"city">>, <<"names">>, <<"en">>], <<>>)
@@ -208,9 +208,9 @@ test_deepchema(Config) ->
 		lpool, {2, 125, 160, 216},
 		[
 			?GPATH(subdivisions, [<<"subdivisions">>,
-								  	[?GPATH(geoname_id, <<"geoname_id">>, undefined),
+								  {list, [?GPATH(geoname_id, <<"geoname_id">>, undefined),
 									 ?GPATH(iso_code, <<"iso_code">>, undefined),
-								  	 ?GPATH(name, [<<"names">>, <<"en">>], undefined)],
+								  	 ?GPATH(name, [<<"names">>, <<"en">>], undefined)]},
 								  <<"tailelem">>
 								  ], nuffin
 			),

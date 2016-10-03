@@ -108,7 +108,7 @@ lookup_key(Rec, Key, Default) when is_binary(Key) ->
 		_ -> Default
 	end;
 
-lookup_key(Rec, [InnerSchema | _], _Default) when is_list(Rec), is_list(InnerSchema) ->
+lookup_key(Rec, [{list, InnerSchema} | _], _Default) when is_list(Rec), is_list(InnerSchema) ->
 	[
 		lists:foldl(
 			fun({Name, InnerPath, InnerDefault}, Map) ->
@@ -120,6 +120,16 @@ lookup_key(Rec, [InnerSchema | _], _Default) when is_list(Rec), is_list(InnerSch
 
 		|| R <- Rec
 	];
+
+lookup_key(Rec, [InnerSchema | _], _Default) when is_list(Rec), is_list(InnerSchema) ->
+	lists:foldl(
+		fun({Name, InnerPath, InnerDefault}, Map) ->
+			Map#{Name => lookup_key(Rec, InnerPath, InnerDefault)}
+		end,
+		#{},
+		InnerSchema
+	);
+
 
 
 lookup_key(Rec, [{list, Key} | Path], Default) when is_list(Rec), is_binary(Key) ->

@@ -30,7 +30,7 @@ in the result map, Path - path to the value as binary or list of binaries, Defau
 if there's no this field for this IP. While it is possible to send schema with each lookup, it is better to specify
 the schema at the time of the creation of a pool, this vould reduce copying of the lists between processes.
 Invalid schema would result in crash. See examples in the tests.
-* New in 1.1.1 - the last element of the `Path` can be list of `?GPATH` elements itself. This format is
+* New in 1.1.1 - the last element of the `Path` can be {list(), [`?GPATH`, ...]}. This format is
 useful if you need to get multiple elements of the proplist data, such as `subdivisions` data in the GeoIP2 City
 databases. If there's another element after the deep path, it will be silently ignored.
 See the `test_deepchema` in the `geodata2_SUITE.erl`.
